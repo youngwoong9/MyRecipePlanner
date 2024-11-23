@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -41,6 +42,8 @@ fun MainScreen(
     navController: NavHostController
 ) {
     var currentDateTime by rememberSaveable { mutableStateOf(LocalDateTime.now()) }
+
+    var selectedDate by rememberSaveable { mutableStateOf<LocalDate?>(null) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -53,7 +56,10 @@ fun MainScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     IconButton(
-                        onClick = { navController.navigate("recipe") },
+                        onClick = {
+                            selectedDate = null
+                            navController.navigate("recipe")
+                        },
                     ) {
                         Icon(
                             imageVector = Icons.Default.ShoppingCart,
@@ -71,7 +77,9 @@ fun MainScreen(
         ) {
             CalendarApp(
                 currentDateTime = currentDateTime,
-                onDateTimeChange = { updatedDateTime -> currentDateTime = updatedDateTime }
+                selectedDate = selectedDate,
+                onDateSelected = { selectedDate = it },
+                onDateTimeChange = { currentDateTime = it }
             )
         }
     }
@@ -80,6 +88,8 @@ fun MainScreen(
 @Composable
 fun CalendarApp(
     currentDateTime: LocalDateTime,
+    selectedDate: LocalDate?, // The currently selected date
+    onDateSelected: (LocalDate?) -> Unit, // Callback for when a date is selected
     onDateTimeChange: (LocalDateTime) -> Unit // Callback function to handle date changes
 ) {
     Column(
@@ -95,7 +105,11 @@ fun CalendarApp(
         )
         CalendarDayOfTheWeek()
         Spacer(modifier = Modifier.padding(8.dp))
-        CalendarDayList(dateTime = currentDateTime)
+        CalendarDayList(
+            currentDateTime = currentDateTime,
+            selectedDate = selectedDate,
+            onDateSelected = onDateSelected
+        )
     }
 }
 
@@ -176,22 +190,31 @@ fun CalendarDayOfTheWeek() {
 }
 
 @Composable
-fun CalendarDayList(dateTime: LocalDateTime) {
+fun CalendarDayList(
+    currentDateTime: LocalDateTime,
+    selectedDate: LocalDate?, // Pass the selected date
+    onDateSelected: (LocalDate?) -> Unit
+) {
     // Separate logic: Calculate the calendar data
-    val calendarData = calculateCalendarData(dateTime)
+    val calendarData = calculateCalendarData(currentDateTime)
 
     Column {
         calendarData.weeks.forEach { week ->
             Row {
                 week.forEach { day ->
                     if (day != null) {
+                        val currentDate = currentDateTime.withDayOfMonth(day).toLocalDate()
+
                         Box(
                             modifier = Modifier.weight(1f),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "$day",
-                                modifier = Modifier.clickable(onClick = {}) // Make the date clickable
+                                color = if (currentDate == selectedDate) Color.Red else Color.Black, // Red if selected, otherwise black
+                                modifier = Modifier.clickable {
+                                    onDateSelected(currentDate) // Notify MainScreen of the new selection
+                                }
                             )
                         }
                     } else {
