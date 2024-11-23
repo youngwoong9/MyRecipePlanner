@@ -1,5 +1,6 @@
 package com.example.myrecipeplanner.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -195,6 +197,8 @@ fun CalendarDayList(
     selectedDate: LocalDate?, // Pass the selected date
     onDateSelected: (LocalDate?) -> Unit
 ) {
+    val today = LocalDate.now()
+
     // Separate logic: Calculate the calendar data
     val calendarData = calculateCalendarData(currentDateTime)
 
@@ -207,12 +211,15 @@ fun CalendarDayList(
 
                         Box(
                             modifier = Modifier.weight(1f),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 text = "$day",
                                 color = if (currentDate == selectedDate) Color.Red else Color.Black, // Red if selected, otherwise black
-                                modifier = Modifier.clickable {
+                                modifier = Modifier.background(
+                                    color = if (currentDate == today) Color.Yellow else Color.Transparent,
+                                    shape = CircleShape // Circular background for today's date
+                                ).padding(12.dp).clickable {
                                     onDateSelected(currentDate) // Notify MainScreen of the new selection
                                 }
                             )
