@@ -1,41 +1,22 @@
 package com.example.myrecipeplanner
 
-import android.icu.util.Calendar
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.myrecipeplanner.screens.LoginScreen
 import com.example.myrecipeplanner.screens.MainScreen
 import com.example.myrecipeplanner.screens.RecipeManagementScreen
+import com.example.myrecipeplanner.screens.RegisterScreen
 import com.example.myrecipeplanner.ui.theme.MyRecipePlannerTheme
-import java.text.SimpleDateFormat
-import java.util.Locale
+import com.example.myrecipeplanner.viewmodels.UserViewModel
+import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,12 +26,33 @@ class MainActivity : ComponentActivity() {
             MyRecipePlannerTheme {
                 val navController = rememberNavController()
 
-                NavHost(navController = navController, startDestination = "main") {
-                    composable("main") {
-                        MainScreen(navController)
+                val userViewModel: UserViewModel = viewModel()
+
+                NavHost(navController = navController, startDestination = "login") {
+                    // 로그인 화면
+                    composable("login") {
+                        LoginScreen(navController, userViewModel)
                     }
+                    // 회원가입 화면
+                    composable("register") {
+                        RegisterScreen(navController, userViewModel)
+                    }
+                    // 메인(캘린더) 화면
+                    composable("main") {
+                        MainScreen(navController, userViewModel)
+                    }
+                    // 레시피 관리 화면
                     composable("recipe") {
-                        RecipeManagementScreen(navController)
+                        RecipeManagementScreen(navController, userViewModel, null)
+                    }
+                    // 레시피 관리 화면 2
+                    // LocalDate.parse(it)를 사용하여 수동으로 다시 String에서 LocalDate로 변환
+                    composable(
+                        "recipe/{selectedDate}",
+                    ) { backStackEntry ->
+                        val selectedDate = backStackEntry.arguments?.getString("selectedDate")?.let { LocalDate.parse(it) }
+                        RecipeManagementScreen(navController, userViewModel, selectedDate)
+                    }
                 }
             }
         }
@@ -60,7 +62,6 @@ class MainActivity : ComponentActivity() {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-        MyRecipePlannerTheme {
-        }
+    MyRecipePlannerTheme {
     }
 }

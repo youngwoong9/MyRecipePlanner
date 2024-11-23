@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
@@ -24,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -32,20 +34,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.example.myrecipeplanner.ui.theme.MyRecipePlannerTheme
+import com.example.myrecipeplanner.viewmodels.UserViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
 fun MainScreen(
-    navController: NavHostController
+    navController: NavHostController,
+    userViewModel: UserViewModel
 ) {
     var currentDateTime by rememberSaveable { mutableStateOf(LocalDateTime.now()) }
 
     var selectedDate by rememberSaveable { mutableStateOf<LocalDate?>(null) }
+
+    val userState by userViewModel.userState.collectAsState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -54,14 +63,28 @@ fun MainScreen(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
             ) {
                 Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 ) {
+                    IconButton(
+                        onClick = {
+                            if (selectedDate != null) {
+                                // Compose Navigation은 selectedDate의 toString()을 호출하여 자동으로 LocalDate를 String으로 처리
+                                navController.navigate("recipe/${selectedDate}")
+                            }
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "to-do 리스트 추가"
+                        )
+                    }
+                    
                     IconButton(
                         onClick = {
                             selectedDate = null
                             navController.navigate("recipe")
                         },
+                        modifier = Modifier.align(Alignment.Center)
                     ) {
                         Icon(
                             imageVector = Icons.Default.ShoppingCart,
@@ -75,7 +98,8 @@ fun MainScreen(
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .fillMaxSize()
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CalendarApp(
                 currentDateTime = currentDateTime,
@@ -83,6 +107,15 @@ fun MainScreen(
                 onDateSelected = { selectedDate = it },
                 onDateTimeChange = { currentDateTime = it }
             )
+
+            // Show the shopping list for the selected date
+            if (selectedDate != null && userState.shoppingToDoMap.containsKey(selectedDate)) {
+                Text(
+                    text = userState.shoppingToDoMap[selectedDate].toString(),
+                )
+            } else {
+                Text(text = "쇼핑리스트가 비어있습니다.")
+            }
         }
     }
 }
@@ -260,4 +293,12 @@ fun calculateCalendarData(dateTime: LocalDateTime): CalendarData {
     }
 
     return CalendarData(weeks)
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainPreview() {
+    MyRecipePlannerTheme {
+        MainScreen(navController = rememberNavController(), userViewModel = UserViewModel())
+    }
 }
