@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 
-class UserViewModel : ViewModel() {
+class UserViewModel: ViewModel() {
     // 현재 로그인한 유저를 추적
     private val _userStateFlow = MutableStateFlow(UserState())
     val userStateFlow = _userStateFlow.asStateFlow()
@@ -55,15 +55,22 @@ class UserViewModel : ViewModel() {
         _userStateFlow.update { UserState() }
     }
 
-    // 지정한 날짜에 쇼핑 리스트 추가 (임시 연습용)
+    // 지정한 날짜에 쇼핑 리스트 추가 (레시피 목록에 있는 레시피만 추가 가능)
     fun addItemToShoppingList(date: LocalDate, recipe: RecipeState): Boolean {
         val currentState = _userStateFlow.value
         val updatedMap = currentState.shoppingToDoMap
 
+        // recipeList에 있는 레시피만 추가할 수 있도록 체크
+        if (!currentState.recipeList.any { it.name == recipe.name }) {
+            // 레시피 목록에 없는 레시피라면 추가할 수 없음
+            return false
+        }
+
         val currentList = updatedMap[date] ?: mutableListOf()
+
         // 이미 추가된 레시피인지 체크 (이름이 같은 레시피가 있는지)
         if (currentList.any { it.name == recipe.name }) {
-           return false
+            return false
         }
 
         // 레시피가 없다면 추가
@@ -71,6 +78,20 @@ class UserViewModel : ViewModel() {
         updatedMap[date] = currentList // 수정된 리스트 업데이트
         _userStateFlow.value = currentState.copy(shoppingToDoMap = updatedMap) // 상태 업데이트
 
+        return true
+    }
+
+    // 레시피 추가
+    fun addRecipe(recipe: RecipeState): Boolean {
+        val currentState = _userStateFlow.value
+        val updatedList = currentState.recipeList
+        // 이미 추가된 레시피인지 체크 (이름이 같은 레시피가 있는지)
+        if (updatedList.any { it.name == recipe.name }) {
+            return false
+        }
+
+        updatedList.add(recipe)
+        _userStateFlow.value = currentState.copy(recipeList = updatedList)
         return true
     }
 }
