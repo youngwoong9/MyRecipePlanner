@@ -19,12 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.example.myrecipeplanner.components.InputField
 import com.example.myrecipeplanner.viewmodels.UserViewModel
 
@@ -63,16 +61,13 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel =
         Button(
             onClick = {
                 when {
-                    nickname.isBlank() -> errorMessage = "닉네임을 입력해주세요."
-
-                    password.isBlank() -> errorMessage = "비밀번호를 입력해주세요."
-
                     userViewModel.loginUser(nickname, password) -> navController.navigate("main")
 
                     else -> errorMessage = "가입되지 않은 회원입니다."
 
                 }
-            }
+            },
+            enabled = nickname.isNotBlank() && password.isNotBlank()
         ) {
             Text("로그인")
         }

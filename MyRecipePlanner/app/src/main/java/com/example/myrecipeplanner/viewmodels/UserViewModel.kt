@@ -8,53 +8,68 @@ import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 
 class UserViewModel : ViewModel() {
-    private val _userState = MutableStateFlow(UserState())
-    val userState = _userState.asStateFlow()
+    // 현재 로그인한 유저를 추적
+    private val _userStateFlow = MutableStateFlow(UserState())
+    val userStateFlow = _userStateFlow.asStateFlow()
 
-    // 유저 저장소 (추후에 DB 사용할 것)
-    private val users = mutableMapOf<String, String>()
+    // 회원가입한 유저들을 저장해둔 임시 저장소
+    private val _userMapStateFlow = MutableStateFlow<Map<String, UserState>>(emptyMap())
+    val userMapStateFlow = _userMapStateFlow.asStateFlow()
 
     init {
-        loadInitialUsers()
+        initializeTestUsers()
     }
 
-    // 테스트용 회원
-    private fun loadInitialUsers() {
-        users["test"] = "test"
-        users["test2"] = "test2"
+    // 테스트용 유저를 미리 회원가입시킨다.
+    private fun initializeTestUsers() {
+        val initialUsers = mapOf(
+            "test" to UserState(nickname = "test", password = "test", shoppingToDoMap = mutableMapOf()),
+            "test2" to UserState(nickname = "test2", password = "test2", shoppingToDoMap = mutableMapOf())
+        )
+        _userMapStateFlow.value = initialUsers
     }
 
+    // 회원가입
     fun registerUser(nickname: String, password: String): Boolean {
-        if (!users.containsKey(nickname)) {
-            users[nickname] = password
+        if (!_userMapStateFlow.value.containsKey(nickname)) {
+            val newUser = UserState(nickname = nickname, password = password, shoppingToDoMap = mutableMapOf())
+            _userMapStateFlow.value += (nickname to newUser)
             return true
         }
         return false
     }
 
+    // 로그인
     fun loginUser(nickname: String, password: String): Boolean {
-        val isLoggedIn = users[nickname] == password
-        if (isLoggedIn) {
-            _userState.update { it.copy(nickname = nickname, password = password) }
+        val user = _userMapStateFlow.value[nickname]
+        if (user != null && user.password == password) {
+            _userStateFlow.update { user.copy(password = password) }
+            return true
         }
-        return isLoggedIn
+        return false
     }
 
+    // 로그아웃
     fun logoutUser() {
-        _userState.update { UserState() }
+        _userStateFlow.update { UserState() }
     }
 
     // 지정한 날짜에 쇼핑 리스트 추가 (임시 연습용)
     fun addItemToShoppingList(date: LocalDate, item: String) {
-        val currentState = _userState.value
+        val currentState = _userStateFlow.value
         val updatedMap = currentState.shoppingToDoMap
 
-        // If the selected date already exists, update the list, otherwise create a new one
-        updatedMap[date]?.add(item) ?: run {
-            updatedMap[date] = mutableListOf(item)
+        val currentList = updatedMap[date] ?: mutableListOf()
+
+        // Only add the item if it doesn't already exist in the list
+        if (!currentList.contains(item)) {
+            currentList.add(item)
         }
 
+        // Update the map with the new or modified list for the selected date
+        updatedMap[date] = currentList
+
         // Update the state with the new map
-        _userState.value = currentState.copy(shoppingToDoMap = updatedMap)
+        _userStateFlow.value = currentState.copy(shoppingToDoMap = updatedMap)
     }
 }

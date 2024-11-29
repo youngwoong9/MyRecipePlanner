@@ -41,7 +41,7 @@ fun RegisterScreen(navController: NavHostController, userViewModel: UserViewMode
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("BikeMate", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text("MyRecipePlanner", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
 
 
@@ -73,19 +73,14 @@ fun RegisterScreen(navController: NavHostController, userViewModel: UserViewMode
             Button(
                 onClick = {
                     when {
-                        nickname.isBlank() -> errorMessage = "닉네임을 입력해주세요."
-
-                        password.isBlank() -> errorMessage = "비밀번호를 입력해주세요."
-
-                        password != confirmPassword -> errorMessage = "비밀번호가 일치하지 않습니다."
-
                         userViewModel.registerUser(nickname, password) -> navController.navigate("login")
 
                         else -> errorMessage = "이미 존재하는 닉네임입니다."
                     }
-                }
+                },
+                enabled = nickname.isNotBlank() && password.isNotBlank() && password == confirmPassword
             ) {
-                Text("회원가입")
+                Text(text = "회원가입")
             }
         }
         Spacer(modifier = Modifier.height(8.dp))

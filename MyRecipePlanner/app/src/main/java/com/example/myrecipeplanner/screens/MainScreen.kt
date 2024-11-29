@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
@@ -51,10 +52,10 @@ fun MainScreen(
     userViewModel: UserViewModel
 ) {
     var currentDateTime by rememberSaveable { mutableStateOf(LocalDateTime.now()) }
-
     var selectedDate by rememberSaveable { mutableStateOf<LocalDate?>(null) }
 
-    val userState by userViewModel.userState.collectAsState()
+    // 현재 로그인한 유저 정보를 가져옴
+    val loggedInUserState by userViewModel.userStateFlow.collectAsState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -91,6 +92,19 @@ fun MainScreen(
                             contentDescription = "레시피 관리 화면으로 이동"
                         )
                     }
+
+                    IconButton(
+                        onClick = {
+                            userViewModel.logoutUser()
+                            navController.navigateUp()
+                        },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "로그아웃"
+                        )
+                    }
                 }
             }
         }
@@ -108,10 +122,11 @@ fun MainScreen(
                 onDateTimeChange = { currentDateTime = it }
             )
 
-            // Show the shopping list for the selected date
-            if (selectedDate != null && userState.shoppingToDoMap.containsKey(selectedDate)) {
+            // 현재 로그인한 유저의 쇼핑 To-Do 리스트를 가져옴
+            val shoppingList = loggedInUserState.shoppingToDoMap[selectedDate]
+            if (selectedDate != null && shoppingList != null) {
                 Text(
-                    text = userState.shoppingToDoMap[selectedDate].toString(),
+                    text = shoppingList.toString(),
                 )
             } else {
                 Text(text = "쇼핑리스트가 비어있습니다.")
@@ -249,6 +264,7 @@ fun CalendarDayList(
                             Text(
                                 text = "$day",
                                 color = if (currentDate == selectedDate) Color.Red else Color.Black, // Red if selected, otherwise black
+                                fontWeight = if (currentDate == selectedDate) FontWeight.Bold else FontWeight.Normal,
                                 modifier = Modifier.background(
                                     color = if (currentDate == today) Color.Yellow else Color.Transparent,
                                     shape = CircleShape // Circular background for today's date

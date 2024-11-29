@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1054697456857",
+    "project_id": "myrecipeplanner-e7421",
+    "storage_bucket": "myrecipeplanner-e7421.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1054697456857:android:30b049c9195fdbb7b36ac8",
+        "android_client_info": {
+          "package_name": "com.example.myrecipeplanner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFWxwNyQt6ugizSLekM0enJOPdBekZo04"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
