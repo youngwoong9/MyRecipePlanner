@@ -1,6 +1,7 @@
 package com.example.myrecipeplanner.viewmodels
 
 import androidx.lifecycle.ViewModel
+import com.example.myrecipeplanner.states.RecipeState
 import com.example.myrecipeplanner.states.UserState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,21 +56,21 @@ class UserViewModel : ViewModel() {
     }
 
     // 지정한 날짜에 쇼핑 리스트 추가 (임시 연습용)
-    fun addItemToShoppingList(date: LocalDate, item: String) {
+    fun addItemToShoppingList(date: LocalDate, recipe: RecipeState): Boolean {
         val currentState = _userStateFlow.value
         val updatedMap = currentState.shoppingToDoMap
 
         val currentList = updatedMap[date] ?: mutableListOf()
-
-        // Only add the item if it doesn't already exist in the list
-        if (!currentList.contains(item)) {
-            currentList.add(item)
+        // 이미 추가된 레시피인지 체크 (이름이 같은 레시피가 있는지)
+        if (currentList.any { it.name == recipe.name }) {
+           return false
         }
 
-        // Update the map with the new or modified list for the selected date
-        updatedMap[date] = currentList
+        // 레시피가 없다면 추가
+        currentList.add(recipe)
+        updatedMap[date] = currentList // 수정된 리스트 업데이트
+        _userStateFlow.value = currentState.copy(shoppingToDoMap = updatedMap) // 상태 업데이트
 
-        // Update the state with the new map
-        _userStateFlow.value = currentState.copy(shoppingToDoMap = updatedMap)
+        return true
     }
 }
