@@ -20,9 +20,11 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -40,12 +42,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.myrecipeplanner.states.RecipeState
 import com.example.myrecipeplanner.ui.theme.MyRecipePlannerTheme
+import com.example.myrecipeplanner.ui.theme.Purple80
+import com.example.myrecipeplanner.ui.theme.SkyBlue
 import com.example.myrecipeplanner.viewmodels.UserViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -61,6 +67,7 @@ fun MainScreen(
 
     // 현재 로그인한 유저 정보를 가져옴
     val loggedInUserState by userViewModel.userStateFlow.collectAsState()
+    val shoppingList = loggedInUserState.shoppingToDoMap[selectedDate]
 
     val context = LocalContext.current
 
@@ -71,7 +78,9 @@ fun MainScreen(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
             ) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
                 ) {
                     IconButton(
                         onClick = {
@@ -131,24 +140,102 @@ fun MainScreen(
                 onDateSelected = { selectedDate = it },
                 onDateTimeChange = { currentDateTime = it }
             )
+            Spacer(modifier = Modifier.padding(vertical = 8.dp))
 
-            // 현재 로그인한 유저의 쇼핑 To-Do 리스트를 가져옴
-            val shoppingList = loggedInUserState.shoppingToDoMap[selectedDate]
-            if (selectedDate != null && shoppingList != null) {
-                LazyColumn {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .border(width = 1.dp, color = Color.Red),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (selectedDate != null && !shoppingList.isNullOrEmpty()) {
                     items(shoppingList) { recipe ->
-                        Text(text = recipe.name)
-                        Text(text = recipe.ingredients.toString())
-                        Text(text = recipe.method.toString())
-                        HorizontalDivider(thickness = 2.dp, modifier = Modifier.padding(vertical = 8.dp))
+                        ToDoList(
+                            recipe,
+                            onRemoveRecipe = {
+                                // 쇼핑 리스트에서 레시피 삭제
+                                userViewModel.removeItemFromShoppingList(selectedDate!!, it)
+                            }
+                        )
+                        Spacer(modifier = Modifier.padding(vertical = 8.dp))
+                    }
+                } else {
+                    item {
+                        Text(
+                            text = "쇼핑리스트가 비어있습니다.",
+                            modifier = Modifier.padding(top = 150.dp)
+                        )
                     }
                 }
-            } else {
-                Text(text = "쇼핑리스트가 비어있습니다.")
             }
         }
     }
 }
+
+@Composable
+fun ToDoList(
+    recipe: RecipeState,
+    onRemoveRecipe: (RecipeState) -> Unit
+) {
+    ToDoHeader(
+        recipe,
+        onRemoveRecipe
+    )
+
+    recipe.ingredients.forEach { ingredient ->
+        TodoItem(ingredient)
+    }
+}
+
+@Composable
+fun ToDoHeader(
+    recipe: RecipeState,
+    onRemoveRecipe: (RecipeState) -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth().background(color = Purple80).padding(start = 4.dp, end = 4.dp)
+    ) {
+        IconButton(
+            onClick = { onRemoveRecipe(recipe) }
+        ) {
+            Icon(Icons.Default.Close, contentDescription = "to-do 리스트 삭제")
+        }
+
+        Text(text = recipe.name, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+
+        IconButton(
+            onClick = { }
+        ) {
+            Icon(Icons.Filled.Notifications, contentDescription = "알람 페이지로 이동")
+        }
+    }
+}
+
+@Composable
+fun TodoItem(ingredient: String) {
+    var checked by rememberSaveable { mutableStateOf(false) }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth().background(color = SkyBlue).padding(start = 16.dp, end = 4.dp)
+    ) {
+        Text(
+            text = ingredient, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+            color = if (checked) Color.Gray else Color.Black,
+            textDecoration = if (checked) TextDecoration.LineThrough else TextDecoration.None
+        )
+
+        Checkbox(
+            checked = checked,
+            onCheckedChange = { checked = it }
+        )
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 @Composable
 fun CalendarApp(
@@ -186,7 +273,7 @@ fun CalendarHeader(
 
     Text(
         text = resultTime,
-        fontSize = 30.sp
+        fontSize = 25.sp
     )
 }
 
@@ -198,7 +285,7 @@ fun CalendarHeaderBtn(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 30.dp, bottom = 30.dp),
+            .padding(vertical = 5.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         IconButton(
@@ -279,12 +366,15 @@ fun CalendarDayList(
                                 text = "$day",
                                 color = if (currentDate == selectedDate) Color.Red else Color.Black, // Red if selected, otherwise black
                                 fontWeight = if (currentDate == selectedDate) FontWeight.Bold else FontWeight.Normal,
-                                modifier = Modifier.background(
-                                    color = if (currentDate == today) Color.Yellow else Color.Transparent,
-                                    shape = CircleShape // Circular background for today's date
-                                ).padding(12.dp).clickable {
-                                    onDateSelected(currentDate) // Notify MainScreen of the new selection
-                                }
+                                modifier = Modifier
+                                    .background(
+                                        color = if (currentDate == today) Color.Yellow else Color.Transparent,
+                                        shape = CircleShape // Circular background for today's date
+                                    )
+                                    .padding(12.dp)
+                                    .clickable {
+                                        onDateSelected(currentDate) // Notify MainScreen of the new selection
+                                    }
                             )
                         }
                     } else {
@@ -292,7 +382,6 @@ fun CalendarDayList(
                     }
                 }
             }
-            Spacer(modifier = Modifier.padding(top = 8.dp)) // Space between weeks
         }
     }
 }

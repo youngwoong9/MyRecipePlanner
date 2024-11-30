@@ -55,6 +55,20 @@ class UserViewModel: ViewModel() {
         _userStateFlow.update { UserState() }
     }
 
+    // 레시피 추가
+    fun addRecipe(recipe: RecipeState): Boolean {
+        val currentState = _userStateFlow.value
+        val updatedList = currentState.recipeList
+        // 이미 추가된 레시피인지 체크 (이름이 같은 레시피가 있는지)
+        if (updatedList.any { it.name == recipe.name }) {
+            return false
+        }
+
+        updatedList.add(recipe)
+        _userStateFlow.update { currentState.copy(recipeList = updatedList) }
+        return true
+    }
+
     // 지정한 날짜에 쇼핑 리스트 추가 (레시피 목록에 있는 레시피만 추가 가능)
     fun addItemToShoppingList(date: LocalDate, recipe: RecipeState): Boolean {
         val currentState = _userStateFlow.value
@@ -76,22 +90,25 @@ class UserViewModel: ViewModel() {
         // 레시피가 없다면 추가
         currentList.add(recipe)
         updatedMap[date] = currentList // 수정된 리스트 업데이트
-        _userStateFlow.value = currentState.copy(shoppingToDoMap = updatedMap) // 상태 업데이트
+        _userStateFlow.update { currentState.copy(shoppingToDoMap = updatedMap) }
 
         return true
     }
 
-    // 레시피 추가
-    fun addRecipe(recipe: RecipeState): Boolean {
+    // 쇼핑 리스트에서 레시피 제거
+    fun removeItemFromShoppingList(date: LocalDate, recipe: RecipeState): Boolean {
         val currentState = _userStateFlow.value
-        val updatedList = currentState.recipeList
-        // 이미 추가된 레시피인지 체크 (이름이 같은 레시피가 있는지)
-        if (updatedList.any { it.name == recipe.name }) {
-            return false
-        }
+        val updatedMap = currentState.shoppingToDoMap
 
-        updatedList.add(recipe)
-        _userStateFlow.value = currentState.copy(recipeList = updatedList)
-        return true
+        val currentList = updatedMap[date]
+        if (currentList != null && currentList.any { it.name == recipe.name }) {
+            val updatedList = currentList.filter { it.name != recipe.name }
+            updatedMap[date] = updatedList.toMutableList()
+
+            _userStateFlow.update { currentState.copy(shoppingToDoMap = updatedMap) }
+
+            return true
+        }
+        return false
     }
 }
